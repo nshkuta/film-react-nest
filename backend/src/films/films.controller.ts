@@ -7,7 +7,7 @@ export class FilmsController {
   constructor(private readonly filmsService: FilmsService) {}
 
   @Get()
-  async getFilms(): Promise<FilmDto[]> {
+  async getFilms(): Promise<{ total: number; items: FilmDto[] }> {
     return this.filmsService.getFilms();
   }
 

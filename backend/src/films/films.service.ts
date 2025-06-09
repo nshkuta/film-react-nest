@@ -10,8 +10,12 @@ export class FilmsService {
     private readonly scheduleRepository: ScheduleRepository,
   ) {}
 
-  async getFilms(): Promise<FilmDto[]> {
-    return this.filmRepository.findAll();
+  async getFilms(): Promise<{ total: number; items: FilmDto[] }> {
+    const films = await this.filmRepository.findAll();
+    return {
+      total: films.length,
+      items: films,
+    };
   }
 
   async getFilmById(id: string): Promise<FilmDto | undefined> {

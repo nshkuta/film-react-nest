@@ -18,7 +18,7 @@ import { OrderModule } from './order/order.module';
     }),
     ServeStaticModule.forRoot({
       rootPath: path.join(__dirname, '..', 'public'),
-      serveRoot: '/content/afisha/',
+      renderPath: '/content/afisha/',
     }),
     DatabaseModule,
     FilmsModule,
