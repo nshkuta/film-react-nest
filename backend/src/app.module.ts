@@ -5,10 +5,10 @@ import * as path from 'node:path';
 
 import { configProvider } from './app.config.provider';
 import { FilmsController } from './films/films.controller';
-import { OrderController } from './order/order.controller';
 import { DatabaseModule } from './database.module';
 import { FilmsModule } from './films/films.module';
 import { OrderModule } from './order/order.module';
+import { OrderController } from './order/order.controller';
 
 @Module({
   imports: [

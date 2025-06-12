@@ -12,7 +12,13 @@ export class FilmsController {
   }
 
   @Get(':id/schedule')
-  async getSchedule(@Param('id') id: string): Promise<ScheduleDto[]> {
-    return this.filmsService.getSchedule(id);
+  async getSchedule(
+    @Param('id') id: string,
+  ): Promise<{ total: number; items: ScheduleDto[] }> {
+    const sessions = await this.filmsService.getSchedule(id);
+    return {
+      total: sessions.length,
+      items: sessions,
+    };
   }
 }
