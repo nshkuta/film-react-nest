@@ -3,8 +3,8 @@ import { FilmRepository } from '../repository/film.repository';
 import { FilmsController } from './films.controller';
 import { FilmsService } from './films.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Films } from '../repository/film.entity';
-import { Schedules } from '../repository/schedule.entity';
+import { Films } from '../repository/films.entity';
+import { Schedules } from '../repository/schedules.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Films, Schedules])],

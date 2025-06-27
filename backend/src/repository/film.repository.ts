@@ -1,8 +1,8 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Films } from './film.entity';
-import { Schedules } from './schedule.entity';
+import { Films } from './films.entity';
+import { Schedules } from './schedules.entity';
 import { ConflictException } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common';
 import { OrderDto } from 'src/order/dto/order.dto';

@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Films } from './film.entity';
+import { Films } from './films.entity';
 
 @Entity()
 export class Schedules {
