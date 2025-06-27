@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { FilmRepository } from 'src/repository/film.repository';
+import { FilmRepository } from '../repository/film.repository';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Films } from 'src/repository/film.entity';
-import { Schedules } from 'src/repository/schedule.entity';
+import { Films } from '../repository/film.entity';
+import { Schedules } from '../repository/schedule.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Films, Schedules])],
