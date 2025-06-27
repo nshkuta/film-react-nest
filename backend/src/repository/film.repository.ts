@@ -1,96 +1,123 @@
-import { Schema } from 'mongoose';
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { FilmDto } from 'src/films/dto/films.dto';
-import { ScheduleDto } from 'src/films/dto/films.dto';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Films } from './film.entity';
+import { Schedules } from './schedule.entity';
+import { ConflictException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { OrderDto } from 'src/order/dto/order.dto';
-
-// Схема для фильмов
-export const FilmSchema = new Schema({
-  _id: { type: String, required: true, unique: true },
-  rating: { type: Number, required: true },
-  director: { type: String, required: true },
-  tags: { type: String, required: true },
-  title: { type: String, required: true },
-  about: { type: String, required: true },
-  description: { type: String, required: true },
-  image: { type: String, required: true },
-  cover: { type: String, required: true },
-  schedule: [
-    {
-      daytime: { type: Date, required: true },
-      hall: { type: Number, required: true },
-      rows: { type: Number, required: true },
-      seats: { type: Number, required: true },
-      price: { type: Number, required: true },
-      taken: { type: [String], default: [], required: false },
-    },
-  ],
-});
-
-export const OrderSchema = new Schema({
-  id: { type: String, required: true, unique: true },
-  film: { type: String, required: true },
-  session: { type: String, required: true },
-  row: { type: Number, required: true },
-  seat: { type: Number, required: true },
-  price: { type: Number, required: true },
-  status: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+import { FilmDto, ScheduleDto } from 'src/films/dto/films.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FilmRepository {
   constructor(
-    @InjectModel('Film') private readonly filmModel: Model<FilmDto>,
-    @InjectModel('Order') private readonly orderModel: Model<OrderDto>,
+    @InjectRepository(Films) private readonly filmRepository: Repository<Films>,
+    @InjectRepository(Schedules)
+    private readonly scheduleRepository: Repository<Schedules>,
   ) {}
 
-  // Методы для работы с фильмами
+  private mapFilmToDto(film: Films): FilmDto {
+    return {
+      id: film.id,
+      rating: film.rating,
+      director: film.director,
+      tags: film.tags ? film.tags.split(',') : [],
+      title: film.title,
+      about: film.about,
+      description: film.description,
+      image: film.image,
+      cover: film.cover,
+      schedule: film.schedules.map((schedule) => ({
+        id: schedule.id,
+        daytime: new Date(schedule.daytime),
+        hall: schedule.hall.toString(),
+        rows: schedule.rows,
+        seats: schedule.seats,
+        price: schedule.price,
+        taken: schedule.taken ? schedule.taken.split(',') : [],
+        filmId: film.id,
+      })),
+    };
+  }
   async findAllFilms(): Promise<FilmDto[]> {
-    return this.filmModel.find().exec();
+    try {
+      const films = await this.filmRepository.find({
+        relations: ['schedules'],
+      });
+      return films.map((film) => this.mapFilmToDto(film));
+    } catch (error) {
+      throw new InternalServerErrorException('Ошибка при получении фильмов');
+    }
   }
 
   async findFilmById(id: string): Promise<FilmDto | null> {
-    return this.filmModel.findOne({ id }).exec();
+    try {
+      const film = await this.filmRepository.findOneBy({
+        id,
+      });
+
+      if (film) {
+        return this.mapFilmToDto(film);
+      }
+      return null;
+    } catch (error) {
+      throw new InternalServerErrorException('Ошибка при получении фильма');
+    }
   }
 
   async findScheduleByFilmId(filmId: string): Promise<ScheduleDto[]> {
     try {
-      const film = await this.filmModel.findOne({ id: filmId }).exec();
-      if (!film) {
-        throw new Error('Фильм не найден');
+      const schedules = await this.scheduleRepository.find({
+        where: {
+          film: {
+            id: filmId,
+          },
+        },
+        relations: ['film'],
+      });
+      if (!schedules.length) {
+        throw new NotFoundException('Расписание не найдено');
       }
-      return film.schedule || [];
+
+      const scheduleDtos = schedules.map((schedule) => ({
+        id: schedule.id,
+        daytime: new Date(schedule.daytime),
+        hall: schedule.hall.toString(),
+        rows: schedule.rows,
+        seats: schedule.seats,
+        price: schedule.price,
+        taken: schedule.taken ? schedule.taken.split(',') : [],
+        filmId: schedule.film.id,
+      }));
+
+      return scheduleDtos;
     } catch (error) {
+      console.log(error);
       throw new Error('Ошибка при получении расписания');
     }
   }
 
   async checkSeatAvailability(
     filmId: string,
-    sessionId: string,
+    scheduleId: string,
     seat: string,
   ): Promise<boolean> {
-    const film = await this.filmModel.findOne({ id: filmId }).exec();
-    if (!film) {
-      throw new NotFoundException('Фильм не найден');
-    }
+    const schedule = await this.scheduleRepository.findOneBy({
+      id: scheduleId,
+      film: {
+        id: filmId,
+      },
+    });
 
-    const session = film.schedule.find((s) => s.id === sessionId);
-    if (!session) {
+    if (!schedule) {
       throw new NotFoundException('Сеанс не найден');
     }
 
-    return !session.taken.includes(seat);
+    return !schedule.taken.includes(seat);
   }
 
-  async createOrder(orderData: OrderDto): Promise<OrderDto> {
+  async createOrder(orderData: OrderDto): Promise<any> {
     // Проверяем доступность места
     const isAvailable = await this.checkSeatAvailability(
       orderData.film,
@@ -102,8 +129,34 @@ export class FilmRepository {
       throw new ConflictException('Место уже занято');
     }
 
-    // Создаем заказ
-    const newOrder = new this.orderModel(orderData);
-    return await newOrder.save();
+    const schedule = await this.scheduleRepository.findOneBy({
+      id: orderData.session,
+    });
+
+    if (schedule) {
+      const currentTaken = schedule.taken ? schedule.taken.split(',') : [];
+      const updatedTaken = [
+        ...currentTaken,
+        `${orderData.row}:${orderData.seat}`,
+      ];
+      const takenString = updatedTaken.join(',');
+
+      await this.scheduleRepository.update(
+        { id: orderData.session },
+        { taken: takenString },
+      );
+    }
+
+    const newOrder: OrderDto = {
+      id: uuidv4(),
+      film: orderData.film,
+      session: orderData.session,
+      daytime: orderData.daytime,
+      row: orderData.row,
+      seat: orderData.seat,
+      price: orderData.price,
+    };
+
+    return newOrder;
   }
 }

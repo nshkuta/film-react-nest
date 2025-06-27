@@ -1,23 +1,20 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { configProvider } from './app.config.provider';
 
 @Module({
   imports: [
-    TypeOrmModule.forRootAsync({
+    MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        entities: [__dirname + '/**/*.entity{.js,.ts}'],
-        username: configService.get<string>('DATABASE_USERNAME'),
-        password: configService.get<string>('DATABASE_PASSWORD'),
+        uri: configService.get<string>('DATABASE_URL'),
+        useNewUrlParser: true,
       }),
       inject: [ConfigService],
     }),
   ],
   providers: [configProvider],
-  exports: [TypeOrmModule],
+  exports: [MongooseModule],
 })
 export class DatabaseModule {}
