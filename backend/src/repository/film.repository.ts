@@ -147,16 +147,8 @@ export class FilmRepository {
       );
     }
 
-    const newOrder: OrderDto = {
-      id: uuidv4(),
-      film: orderData.film,
-      session: orderData.session,
-      daytime: orderData.daytime,
-      row: orderData.row,
-      seat: orderData.seat,
-      price: orderData.price,
-    };
+    orderData.id = uuidv4();
 
-    return newOrder;
+    return orderData;
   }
 }
