@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: films_nest
+      POSTGRES_USER: pgnest
+      POSTGRES_PASSWORD: pgnest
+      POSTGRES_PORT: 5432
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_DRIVER: postgres
+      DATABASE_URL: postgresql://pgnest:pgnest@postgres:5432/films_nest
+      DEBUG: "*"
+      DATABASE_USERNAME: pgnest
+      DATABASE_PASSWORD: pgnest
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"  
+    volumes:
+      - ./frontend:/var/www/app
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+  pgadmin-data:
+
+networks:
+  app-network:
+    driver: bridge
