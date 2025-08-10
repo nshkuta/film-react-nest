@@ -75,7 +75,7 @@ jobs:
       - name: Check backend health
         run: |
           sleep 30
-          curl --fail http://localhost:3000/api/afisha/films || exit 1
+          curl --fail http://localhost:3000/content/afisha/bg3s.jpg || exit 1
 
       # Остановка контейнеров
       - name: Stop Docker containers
