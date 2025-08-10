@@ -11,7 +11,7 @@ RUN apk add --no-cache libressl-dev
 COPY package*.json ./
 
 # Установка только production зависимостей
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --force
 
 # Копирование исходного кода
 COPY . .
