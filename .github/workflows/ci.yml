@@ -133,6 +133,8 @@ jobs:
         run: |
           # Сборка образов с помощью docker-compose
           docker-compose -f docker-compose.yml build
+          docker tag films_nest_backend films_nest_backend:latest
+          docker tag films_nest_frontend films_nest_frontend:latest
           
           # Тегирование и пуш backend образа
           docker tag films_nest_backend ${REGISTRY}/${IMAGE_NAME}/backend:${{ github.sha }}
