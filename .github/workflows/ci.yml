@@ -110,8 +110,17 @@ jobs:
 
       # Сборка и пуш образов в ghcr.io
       - name: Build and push Docker images
-        uses: docker/compose-action@v3
-        with:
-          file: docker-compose.yml
-          build-cache: true
-          command: push
+        env:
+          REGISTRY: ghcr.io
+          IMAGE_NAME: ${{ github.repository }}
+        run: |
+          # Сборка образов с помощью docker-compose
+          docker-compose -f docker-compose.yml build
+          
+          # Тегирование и пуш backend образа
+          docker tag films_nest_backend ${REGISTRY}/${IMAGE_NAME}/backend:${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}/backend:${{ github.sha }}
+          
+          # Тегирование и пуш frontend образа
+          docker tag films_nest_frontend ${REGISTRY}/${IMAGE_NAME}/frontend:${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}/frontend:${{ github.sha }}
