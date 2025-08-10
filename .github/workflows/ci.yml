@@ -74,7 +74,7 @@ jobs:
       # Проверка работоспособности (пример: проверка HTTP-запроса к backend)
       - name: Check backend health
         run: |
-          sleep 10
+          sleep 100
           curl --fail http://localhost:3000 || exit 1
 
       # Остановка контейнеров
