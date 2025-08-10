@@ -50,7 +50,6 @@ describe('JsonLogger', () => {
     expect(logSpy).toHaveBeenCalledTimes(1);
     const paramOutput = JSON.parse(logSpy.mock.calls[0][0]);
 
-    // Обновляем регулярное выражение под реальный формат
     expect(paramOutput.message).toMatch(
       /^Message with \[ 'string', 123 \] and %d$/,
     );
@@ -68,7 +67,6 @@ describe('JsonLogger', () => {
     expect(logSpy).toHaveBeenCalledTimes(1);
     const specialOutput = JSON.parse(logSpy.mock.calls[0][0]);
 
-    // Обновляем ожидаемое значение
     expect(specialOutput.message).toBe(
       'Message with "quotes" and \\backslash\\ []',
     );
@@ -86,7 +84,6 @@ describe('JsonLogger', () => {
     expect(logSpy).toHaveBeenCalledTimes(1);
     const emptyOutput = JSON.parse(logSpy.mock.calls[0][0]);
 
-    // Обновляем ожидаемое значение с учетом пробела
     expect(emptyOutput.message).toBe(' []');
     expect(typeof emptyOutput.timestamp).toBe('string');
     expect(new Date(emptyOutput.timestamp)).not.toBeNaN();

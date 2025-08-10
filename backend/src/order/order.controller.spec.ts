@@ -3,7 +3,6 @@ import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { OrderDto } from './dto/order.dto';
 
-// Создаем мок данных для заказа
 const mockOrder: OrderDto = {
   id: '1',
   film: 'Test Film',
@@ -42,7 +41,7 @@ describe('OrderController', () => {
   describe('createOrder', () => {
     it('should create new order', async () => {
       const orderData: OrderDto = {
-        id: 'new-order-id', // Добавляем id
+        id: 'new-order-id',
         film: 'New Film',
         session: 'New Session',
         daytime: new Date(),
@@ -63,7 +62,6 @@ describe('OrderController', () => {
         .mockRejectedValue(new Error('Invalid order data'));
 
       try {
-        // Попытка отправить неполные данные
         await controller.createOrder({
           film: 'Invalid Film',
           session: 'Invalid Session',
@@ -83,7 +81,6 @@ describe('OrderController', () => {
         .mockRejectedValue(new Error('Missing required fields'));
 
       try {
-        // Попытка отправить данные без id
         await controller.createOrder({
           film: 'Test Film',
           session: 'Test Session',

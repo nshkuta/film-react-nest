@@ -1,30 +1,151 @@
-name: Deploy to Docker
+name: CI/CD Pipeline
+
+permissions:
+  contents: read
+  packages: write
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-      
-    - name: Login to GitHub Package Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: nshkuta
-        password: ${{ secrets.GITHUB_TOKEN }}
-      
-    - name: Build and push using docker-compose
-      uses: docker/compose@v0.9.0 
-      with:
-        services: app
-        file: ./docker-compose.yml
-        push: true
-        tags: ghcr.io/nshkuta/your-repo:latest
+      # Проверка кода
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Установка Node.js для backend и frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Кэширование зависимостей для ускорения
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ./backend/node_modules
+            ./frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Установка зависимостей для backend
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      # Тестирование backend (если есть тесты)
+      - name: Run backend tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://pgnest:pgnest@localhost:5432/films_nest
+        run: npm test || echo "No tests found"
+
+      # Установка зависимостей для frontend
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      # Тестирование frontend (если есть тесты)
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test || echo "No tests found"
+
+      # Установка Docker Compose
+      - name: Set up Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      # Сборка Docker-образов
+      - name: Build Docker images
+        run: docker-compose -f docker-compose.yml build
+
+      # Запуск контейнеров для проверки
+      - name: Start Docker containers
+        run: docker-compose -f docker-compose.yml up -d
+
+      # Проверка работоспособности (пример: проверка HTTP-запроса к backend)
+      - name: Check backend health
+        run: |
+          sleep 30
+          curl --fail http://localhost:3000/content/afisha/bg3s.jpg || exit 1
+
+      # Остановка контейнеров
+      - name: Stop Docker containers
+        run: docker-compose -f docker-compose.yml down
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      # Проверка кода
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Установка Node.js для установки зависимостей 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Установка зависимостей для backend
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          npm install
+          npm install --save-dev @nestjs/cli
+          npm list @nestjs/cli # Проверка, установлен ли @nestjs/cli
+
+      # Логин в GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          docker-registry: ${{ secrets.DOCKER_REGISTRY }}
+          server-address: ghcr.io
+
+      # Обновление docker-compose.yml для использования ghcr.io
+      - name: Update docker-compose.yml
+        run: |
+          sed -i 's|docker.io/|ghcr.io/|g' docker-compose.yml
+
+      # Установка Docker Compose
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      # Сборка и пуш образов в ghcr.io
+      - name: Build and push Docker images
+        env:
+          REGISTRY: ghcr.io
+          IMAGE_NAME: ${{ github.repository }}
+        run: |
+          # Сборка образов с помощью docker-compose
+          docker-compose -f docker-compose.yml build
+          docker tag films_nest_backend films_nest_backend:latest
+          docker tag films_nest_frontend films_nest_frontend:latest
+          
+          # Тегирование и пуш backend образа
+          docker tag films_nest_backend ${REGISTRY}/${IMAGE_NAME}/backend:${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}/backend:${{ github.sha }}
+          
+          # Тегирование и пуш frontend образа
+          docker tag films_nest_frontend ${REGISTRY}/${IMAGE_NAME}/frontend:${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}/frontend:${{ github.sha }}

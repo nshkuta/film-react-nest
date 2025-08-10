@@ -4,22 +4,22 @@ import { FilmsService } from './films.service';
 import { FilmDto, ScheduleDto } from './dto/films.dto';
 import { FilmRepository } from '../repository/film.repository';
 
-// Создаем мок репозитория
 class MockFilmRepository {
   findAllFilms() {
     return Promise.resolve([mockFilm]);
   }
 
   findFilmById(id: string) {
+    console.log(id);
     return Promise.resolve(mockFilm);
   }
 
   findScheduleByFilmId(filmId: string) {
+    console.log(filmId);
     return Promise.resolve(mockSchedules);
   }
 }
 
-// Моки данных для тестов
 const mockFilm: FilmDto = {
   id: '1',
   rating: 8.5,
@@ -75,7 +75,6 @@ describe('FilmsController', () => {
     service = module.get<FilmsService>(FilmsService);
   });
 
-  // Тестовые случаи
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });

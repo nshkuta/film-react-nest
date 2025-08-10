@@ -34,7 +34,7 @@ describe('TSKVLogger', () => {
 
     expect(errorOutput).toContain('level=ERROR');
     expect(errorOutput).toContain('message=Error occurred');
-    expect(errorOutput).toContain('Stack trace'); // Изменили проверку
+    expect(errorOutput).toContain('Stack trace');
 
     errorSpy.mockRestore();
   });
@@ -47,11 +47,9 @@ describe('TSKVLogger', () => {
     expect(logSpy).toHaveBeenCalledTimes(1);
     const paramOutput = logSpy.mock.calls[0][0];
 
-    // Проверяем message с массивом параметров (учитываем пробелы между кавычками)
     expect(paramOutput).toContain(
       "message=Message with [ 'string', 123 ] and %d",
     );
-    // Проверяем отдельный params ключ
     expect(paramOutput).toContain('params=string,123');
 
     logSpy.mockRestore();

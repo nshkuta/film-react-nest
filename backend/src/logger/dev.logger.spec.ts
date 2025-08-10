@@ -9,16 +9,12 @@ describe('DevLogger', () => {
 
   it('should log basic message', () => {
     const logSpy = jest.spyOn(logger, 'log').mockImplementation();
-    // Вызываем метод лога с тестовым сообщением
     logger.log('Test message');
 
-    // Проверяем, что метод был вызван один раз
     expect(logSpy).toHaveBeenCalledTimes(1);
 
-    // Дополнительно можно проверить параметры вызова
     expect(logSpy).toHaveBeenCalledWith('Test message');
 
-    // Восстанавливаем оригинальное поведение
     logSpy.mockRestore();
   });
 
