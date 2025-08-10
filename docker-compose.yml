@@ -39,6 +39,7 @@ services:
       - postgres
     networks:
       - app-network
+    image: films_nest_backend
 
   frontend:
     build:
