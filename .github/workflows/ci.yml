@@ -22,7 +22,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Build and push using docker-compose
-      uses: docker/compose@v0.9.0 
+      uses: docker/compose@main 
       with:
         services: app
         file: ./docker-compose.yml
