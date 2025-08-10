@@ -99,10 +99,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+     # Обновление docker-compose.yml для использования ghcr.io
+      - name: Update docker-compose.yml
+        run: |
+          sed -i 's|docker.io/|ghcr.io/|g' docker-compose.yml
+
       # Сборка и пуш образов в ghcr.io
       - name: Build and push Docker images
         run: |
-          # Обновление docker-compose.yml для использования ghcr.io
-          sed -i 's|docker.io/|ghcr.io/|g' docker-compose.yml
           docker-compose -f docker-compose.yml build
           docker-compose -f docker-compose.yml push
