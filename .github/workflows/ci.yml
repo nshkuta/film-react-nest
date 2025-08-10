@@ -112,6 +112,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          docker-registry: ${{ secrets.DOCKER_REGISTRY }}
+          server-address: ghcr.io
 
       # Обновление docker-compose.yml для использования ghcr.io
       - name: Update docker-compose.yml
